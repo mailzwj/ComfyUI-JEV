@@ -65,6 +65,11 @@ The merged checkpoint contains the MTP draft head and ComfyUI auto-detects it.
 speculative decoding, so the decision node matches the reference server by default.
 `JEVChat.use_mtp` defaults to **True** (pure speed for free-form chat).
 
+`JEVDecide` and `JEVChat` are output nodes, so they can be submitted through the `/prompt`
+API directly (no extra preview node needed). The `images` input accepts a tensor from a
+`LoadImage` node, a string filename from the ComfyUI input directory, or a list of filenames
+(API usage: `POST /upload/image` first, then pass the returned `name`).
+
 ## Verification performed
 
 - `tools/verify_model_dir.py` — model dir completeness; `comfy.sd.load_clip` of the merged file

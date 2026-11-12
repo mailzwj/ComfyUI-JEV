@@ -1,9 +1,12 @@
 import json
 import os
 
+import numpy as np
 import torch
+from PIL import Image, ImageOps, ImageSequence
 
 import folder_paths
+import comfy.model_management
 from comfy_api.latest import io
 
 from . import jev
@@ -14,6 +17,32 @@ JEVPROB = io.Custom("JEVPROB")
 _LLM_LIST = folder_paths.get_filename_list("llm")
 DEFAULT_MODEL = next((n for n in _LLM_LIST if n.replace(os.sep, "/").endswith("JEV-27B-VL/JEV-27B-VL.safetensors")),
                      "JEV-27B-VL/JEV-27B-VL.safetensors")
+
+_EMPTY = torch.zeros((0, 1, 1, 3), dtype=torch.float32)
+
+
+def _load_images(images):
+    """images is None, a Tensor (HWC/CHW, 0..1), or a str/list of filenames from the ComfyUI input dir."""
+    if images is None or (isinstance(images, torch.Tensor) and images.numel() == 0):
+        return _EMPTY
+    if isinstance(images, torch.Tensor):
+        if images.dim() == 3:
+            images = images.unsqueeze(0)
+        if images.shape[1] == 3 and images.shape[-1] != 3:
+            images = images.permute(0, 2, 3, 1)
+        return images.to(dtype=torch.float32)
+    names = images if isinstance(images, (list, tuple)) else [images]
+    out = []
+    for name in names:
+        path = folder_paths.get_annotated_filepath(name)
+        img = Image.open(path)
+        for frame in ImageSequence.Iterator(img):
+            frame = ImageOps.exif_transpose(frame.convert("RGB"))
+            arr = torch.from_numpy(np.array(frame).astype(np.float32) / 255.0)
+            out.append(arr)
+    if not out:
+        return _EMPTY
+    return torch.stack(out, dim=0).to(dtype=torch.float32)
 
 
 class JEVModelLoader(io.ComfyNode):
@@ -43,6 +72,7 @@ class JEVDecide(io.ComfyNode):
             node_id="JEVDecide",
             display_name="JEV Decide",
             category="JEV",
+            is_output_node=True,
             inputs=[
                 JEVMODEL.Input("model"),
                 io.Combo.Input("kind", options=["noul", "score", "choice"], default="noul",
@@ -77,8 +107,7 @@ class JEVDecide(io.ComfyNode):
     def execute(cls, model, kind, state, images=None, question="", options="", strategy="auto", thinking="default",
                 threshold=0.0, mix=0.0, think_budget=0, reasoning_effort="default", seed=-1, use_mtp=False,
                 system2_only=False, want_reasoning=True):
-        if images is None:
-            images = torch.zeros((0, 1, 1, 3), dtype=torch.float32)
+        images = _load_images(images)
         opts = [l for l in options.splitlines() if l.strip() != ""] if kind == "choice" else None
         resp = jev.decide(model, kind, state, images, question, opts, strategy, thinking,
                           None if threshold == 0.0 else threshold, None if mix == 0.0 else mix,
@@ -93,6 +122,7 @@ class JEVChat(io.ComfyNode):
             node_id="JEVChat",
             display_name="JEV Chat",
             category="JEV",
+            is_output_node=True,
             inputs=[
                 JEVMODEL.Input("model"),
                 io.String.Input("system", multiline=True, optional=True, tooltip="Optional system message"),
@@ -117,8 +147,7 @@ class JEVChat(io.ComfyNode):
     @classmethod
     def execute(cls, model, system, prompt, images=None, enable_thinking=True, reasoning_effort="default",
                 max_tokens=2048, temperature=1.0, top_k=20, top_p=0.95, seed=-1, use_mtp=True):
-        if images is None:
-            images = torch.zeros((0, 1, 1, 3), dtype=torch.float32)
+        images = _load_images(images)
         out = jev.chat(model, system or "", prompt, images, enable_thinking, reasoning_effort,
                        max_tokens, temperature, top_k, top_p, seed, use_mtp)
         return io.NodeOutput(out["thinking"], out["text"])

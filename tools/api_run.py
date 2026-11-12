@@ -4,11 +4,12 @@ Usage: python api_run.py [noul|score|choice|s2|adaptive|chat|image]
 Requires a running ComfyUI (http://127.0.0.1:8188) with the plugin loaded.
 """
 import json
+import os
 import sys
 import time
 import urllib.request
 
-BASE = "http://127.0.0.1:8188"
+BASE = os.environ.get("JEV_API_BASE", "http://127.0.0.1:8188")
 MODEL = "JEV-27B-VL/JEV-27B-VL.safetensors"
 IMG = r"F:\Download\JEV-27B-VL\agent_judge.png"
 
