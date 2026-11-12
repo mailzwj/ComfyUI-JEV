@@ -158,6 +158,7 @@ class JEVModel:
         self.temps = temps
         cond = clip.cond_stage_model
         inner = getattr(cond, cond.clip)
+        _dequantize_visual_pos_embed(inner)
         self.hooks = _load_lora_hooks(model_dir, inner)
 
     def inject_hooks(self):
@@ -178,6 +179,23 @@ def load_jev_model(model_name):
     temps = calib["per_kind"]
     temps.setdefault("score", 1.0)
     return JEVModel(clip, model_dir, model_name, head, temps)
+
+
+def _dequantize_visual_pos_embed(inner):
+    """Materialize the int8 pos-embedding table (~5 MB) at load time.
+
+    In NORMAL_VRAM service mode the quantized-embedding dequant kernel finds the qdata as bf16 and
+    has no capable backend (NoCapableBackendError) on the image path; a dense table takes the plain
+    embedding fallback in every vram mode.
+    """
+    visual = getattr(inner.transformer, "visual", None)
+    pe = getattr(visual, "pos_embed", None)
+    weight = getattr(pe, "weight", None)
+    if weight is None or not isinstance(weight, comfy.ops.QuantizedTensor):
+        return
+    layout_cls = comfy.ops.get_layout_class(getattr(pe, "layout_type", None))
+    dense = layout_cls.dequantize(weight._qdata, weight._params)
+    pe.weight = torch.nn.Parameter(dense.detach(), requires_grad=False)
 
 
 def _inner(model):
