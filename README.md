@@ -24,6 +24,11 @@ models/LLM/JEV-27B-VL/
 The loader registers `models/LLM` as a new model folder named `llm`, so any merged
 qwen35-style `.safetensors` dropped there is selectable.
 
+At load time the vision tower's int8-quantized `pos_embed` table (~5 MB) is dequantized to a
+dense bf16 matrix: in service mode (`NORMAL_VRAM`) the quantized-embedding dequant kernel finds
+the qdata as bf16 and has no capable backend, so image prompts crash without this. The dense
+table is bit-identical to the kernel output and makes the image path work in every VRAM mode.
+
 ## Nodes (V3)
 
 | Node | Purpose |
@@ -86,6 +91,12 @@ API directly (no extra preview node needed). The `images` input accepts a tensor
   the same cases to `/v1/decide`; prints per-option deltas. S1 should agree to float precision
   (differences only from int8 convrot backbone on the ComfyUI side). S2 is intentionally not
   compared: the two runtimes' samplers diverge token-for-token even with equal seeds.
+- **Live API (running ComfyUI, `tools/api_run.py`)** — all 7 cases submitted through `POST
+  /prompt` and verified: noul `[0.015, 0.985] → true` (7.7 s incl. first weight stream), score
+  `→ 5`, choice `[0.9998, …] → Paris` (~2 s, warm), S2 `thinking=on` correct with reasoning in
+  `info`, adaptive `auto`/threshold 0.9 triggered System 2 (S1 max 0.856 < 0.9, folded p2 in),
+  chat thinking on/off channel split, and image (1 uploaded image → 999 prompt tokens,
+  `[0.24, 0.76] → true`).
 
 ## Memory
 
