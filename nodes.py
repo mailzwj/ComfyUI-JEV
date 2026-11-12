@@ -112,7 +112,10 @@ class JEVDecide(io.ComfyNode):
         resp = jev.decide(model, kind, state, images, question, opts, strategy, thinking,
                           None if threshold == 0.0 else threshold, None if mix == 0.0 else mix,
                           think_budget, reasoning_effort, seed, system2_only, want_reasoning, use_mtp)
-        return io.NodeOutput(resp["probabilities"], resp["choice"], json.dumps(resp, ensure_ascii=False))
+        info_str = json.dumps(resp, ensure_ascii=False)
+        # ui: results surfaced in /history and the websocket (the data outputs only flow through graph links)
+        return io.NodeOutput(resp["probabilities"], resp["choice"], info_str,
+                             ui={"probabilities": [resp["probabilities"]], "choice": [resp["choice"]], "info": [info_str]})
 
 
 class JEVChat(io.ComfyNode):
@@ -150,4 +153,5 @@ class JEVChat(io.ComfyNode):
         images = _load_images(images)
         out = jev.chat(model, system or "", prompt, images, enable_thinking, reasoning_effort,
                        max_tokens, temperature, top_k, top_p, seed, use_mtp)
-        return io.NodeOutput(out["thinking"], out["text"])
+        return io.NodeOutput(out["thinking"], out["text"],
+                             ui={"thinking": [out["thinking"]], "text": [out["text"]]})
