@@ -3,6 +3,15 @@
 ComfyUI custom plugin for **JEV-27B-VL** (Qwen3.8-27B-VL backbone + decision LoRA + decision head),
 implementing the `jev27-bare-v1` decision protocol from the model's `serve_decide.py`.
 
+## Workflow preview
+
+`JEVModelLoader` feeds both consumers from a single load: `JEVDecide` runs a
+vision choice task on the loaded image (→ `Chinese`, probabilities
+`[0.231, 0.662, 0.107]` in 3.1 s), while `JEVChat` describes the same image
+with the thinking channel split into its own preview.
+
+![JEV workflow: JEVDecide (image choice) and JEVChat (image description) sharing one JEVModelLoader](workflow/preview.png)
+
 ## Model files
 
 The model is packaged per ComfyUI convention as a single `.safetensors` in the normal model
