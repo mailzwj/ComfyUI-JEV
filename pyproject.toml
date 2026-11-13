@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-jev"
+description = "在 ComfyUI 中运行 JEV-27B-VL 决策协议（jev27-bare-v1）：JEVModelLoader / JEVDecide / JEVChat 三个节点，支持文本+图像输入，输出概率分布、选择与完整协议 JSON。"
+version = "1.0.0"
+requires-python = ">=3.10"
+license = { text = "Apache License 2.0" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/mailzwj/ComfyUI-JEV"
+
+[tool.comfy]
+PublisherId = "meet-ai"
+DisplayName = "ComfyUI-JEV"
+Icon = ""
