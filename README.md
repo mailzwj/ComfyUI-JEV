@@ -3,6 +3,9 @@
 ComfyUI custom plugin for **JEV-27B-VL** (Qwen3.8-27B-VL backbone + decision LoRA + decision head),
 implementing the `jev27-bare-v1` decision protocol from the model's `serve_decide.py`.
 
+> 📖 Step-by-step how to use the nodes (installation, every parameter, API calling, FAQ):
+> see the [English Usage Guide](Usage.md). 中文：[README-zh](README-zh.md) / [中文使用说明](使用说明-zh.md).
+
 ## Workflow preview
 
 `JEVModelLoader` feeds both consumers from a single load: `JEVDecide` runs a
@@ -47,6 +50,19 @@ table is bit-identical to the kernel output and makes the image path work in eve
 | `JEVChat` | Plain chat through the base model with the official Qwen 3.8 chat template (thinking channel split into a separate output; `reasoning_effort`, temperature/top_k/top_p, max_tokens, seed, MTP toggle). |
 
 Custom link types: `JEVMODEL` (model handle), `JEVPROB` (probability list).
+
+## Quick start
+
+1. Restart ComfyUI once so the `JEV` node category appears.
+2. Add a `JEVModelLoader` (combo pre-selects `JEV-27B-VL/JEV-27B-VL.safetensors`).
+3. Wire its `model` into `JEVDecide` (set `kind`, `question`, `options` for choice,
+   optionally `images` from a `Load Image` node) or `JEVChat` (set `prompt`).
+4. Queue the prompt — `JEVDecide` prints probabilities / choice / the full protocol JSON,
+   `JEVChat` prints the thinking channel and the answer separately.
+
+Every parameter with its default and gotcha (e.g. `threshold`/`mix` of `0` means
+"protocol default", not zero) is documented in the [Usage Guide](Usage.md),
+together with the V3 `/prompt` API conventions and a minimal JSON example.
 
 ## Protocol semantics (parity with `serve_decide.py`)
 
