@@ -396,6 +396,10 @@ def chat(model, system, prompt, images, thinking, effort, max_tokens, temperatur
         ids = inner.transformer.generate(embeds, True, max_tokens, temperature, top_k, top_p, 0.0, 1.0, seed_eff,
                                          stop_tokens=[PAD_ID, IM_END_ID], position_ids=pos, mtp=use_mtp)
         usage["completion_tokens"] += len(ids)
+        # generate keeps the token that triggered the stop (it only truncates after it); vLLM strips
+        # it from the decoded text, so drop trailing stop tokens before decoding.
+        while ids and ids[-1] in (PAD_ID, IM_END_ID):
+            ids.pop()
         close = max((i for i, t in enumerate(ids) if t == THINK_CLOSE_ID), default=-1)
         if close >= 0:
             thinking_text = raw.decode(ids[:close], skip_special_tokens=False).strip()
