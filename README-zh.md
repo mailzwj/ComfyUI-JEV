@@ -34,6 +34,16 @@ models/LLM/JEV-27B-VL/
 加载器把 `models/LLM` 注册为名为 `llm` 的新模型目录，因此其中任何 qwen35 风格合并
 `.safetensors` 都可选。
 
+### 模型下载
+
+| 来源 | 链接 |
+|---|---|
+| 魔搭社区（推荐） | <https://modelscope.cn/models/mailzwj/JEV-27B-VL-quant> |
+| 夸克网盘 | <https://pan.quark.cn/s/33396d927094> |
+
+下载整个 `JEV-27B-VL` 目录（含合并前分片共约 53 GB；仅合并单文件为 26.5 GB），
+放到 `models/LLM/JEV-27B-VL/` 即可。
+
 加载期会把视觉塔 int8 量化的 `pos_embed` 表（约 5 MB）反量化为稠密 bf16 矩阵：
 服务进程（`NORMAL_VRAM`）下量化-embedding 反量化内核会把 qdata 当 bf16 处理且没有
 可用后端，不加这一步图像提示词会崩溃。稠密表与内核输出位级一致，使图像路径在

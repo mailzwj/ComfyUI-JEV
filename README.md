@@ -36,6 +36,16 @@ models/LLM/JEV-27B-VL/
 The loader registers `models/LLM` as a new model folder named `llm`, so any merged
 qwen35-style `.safetensors` dropped there is selectable.
 
+### Downloading the model
+
+| Source | Link |
+|---|---|
+| ModelScope (recommended) | <https://modelscope.cn/models/mailzwj/JEV-27B-VL-quant> |
+| Quark netdisk | <https://pan.quark.cn/s/33396d927094> |
+
+Download the whole `JEV-27B-VL` directory (≈ 53 GB with the two pre-merge shards kept;
+the merged single file alone is 26.5 GB) and place it at `models/LLM/JEV-27B-VL/`.
+
 At load time the vision tower's int8-quantized `pos_embed` table (~5 MB) is dequantized to a
 dense bf16 matrix: in service mode (`NORMAL_VRAM`) the quantized-embedding dequant kernel finds
 the qdata as bf16 and has no capable backend, so image prompts crash without this. The dense
